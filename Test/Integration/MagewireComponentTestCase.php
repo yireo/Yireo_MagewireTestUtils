@@ -5,23 +5,43 @@ declare(strict_types=1);
 namespace Yireo\MagewireTestUtils\Test\Integration;
 
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\LayoutInterface;
-use PHPUnit\Framework\TestCase;
+use Magento\TestFramework\TestCase\AbstractController;
+use Magewirephp\Magewire\Model\ComponentResolver;
+use Yireo\IntegrationTestHelper\Test\Integration\Traits\AssertModuleIsEnabled;
 
-class MagewireComponentTestCase extends TestCase
+class MagewireComponentTestCase extends AbstractController
 {
-    public function assertMagewireComponentResolves(string $blockName, string $componentClass)
-    {
-        $componentResolver = ObjectManager::getInstance()->get(\Magewirephp\Magewire\Model\ComponentResolver::class);
+    use AssertModuleIsEnabled;
+    
+    public function assertMagewireComponentResolves(
+        string $blockName,
+        string $componentClass,
+        array $additionalHandles = [],
+    ) {
+        $this->assertModuleIsEnabled('Magewirephp_Magewire');
+        
+        $componentResolver = ObjectManager::getInstance()->get(ComponentResolver::class);
         $layout = ObjectManager::getInstance()->get(LayoutInterface::class);
+        
+        foreach ($additionalHandles as $additionalHandle) {
+            $layout->getUpdate()->addHandle($additionalHandle);
+        }
+        
+        $layout->generateXml();
+        $layout->generateElements();
         $block = $layout->getBlock($blockName);
         
+        $this->assertInstanceOf(AbstractBlock::class, $block);
+        
         $component = $componentResolver->resolve($block);
-        $this->assertInstanceOf($component instanceof $componentClass);
+        $this->assertInstanceOf($componentClass, $component);
     }
     
     public function assertMagewireExistsInHtml(string $html)
     {
+        // @todo: This is not working, unless you use Hyva or use Magewire_RequireJs
         $this->assertStringContainsString('Magewirephp_Magewire/js/livewire.js', $html);
         $this->assertStringContainsString('window.magewire', $html);
     }
