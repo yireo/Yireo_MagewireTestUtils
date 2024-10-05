@@ -2,6 +2,8 @@
 
 **A library of testing utilities (among which PHPUnit assertions) for building integration tests for Magewire-driven Magento extensions**
 
+Current status: Draft
+
 ### Installation
 ```bash
 composer require yireo/magento2-magewire-test-utils
